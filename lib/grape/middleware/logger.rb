@@ -19,13 +19,10 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
 
     super
 
-    logger.info %Q(\nStarted %s "%s" at %s) % [
-      env[Grape::Env::GRAPE_REQUEST].request_method,
-      env[Grape::Env::GRAPE_REQUEST].path,
-      start_time.to_s
-    ]
+    request = @env[Grape::Env::GRAPE_REQUEST]
+    logger.info { started_request_message(request) }
     logger.info "Processing by #{ processed_by }"
-    logger.info "  Parameters: #{ parameters }"
+    logger.info "  Parameters: #{ parameters(request) }"
   end
 
   # @note Error and exception handling are required for the +after+ hooks
@@ -70,6 +67,14 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
     @start_time ||= Time.now
   end
 
+  def started_request_message(request)
+    %Q(\nStarted %s "%s" at %s) % [
+      request.request_method,
+      request.path,
+      start_time.to_default_s
+    ]
+  end
+
   def after_exception(ex)
     logger.info "  Error: #{ ex.message }"
 
@@ -82,8 +87,8 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
     after(error[:status])
   end
 
-  def parameters
-    request_params = env[Grape::Env::GRAPE_REQUEST_PARAMS].to_hash
+  def parameters(request)
+    request_params = request.params.to_hash
     formatter = Grape::Middleware::Formatter.new(app)
     formatter.instance_variable_set :@env, env
 
