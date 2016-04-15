@@ -56,11 +56,14 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
       after(status)
     end
 
+    merge_headers @app_response
+
     @app_response
   end
 
   def after(status)
     logger.info "Completed #{ status } in #{ ((Time.now - start_time) * 1000).round(2) }ms"
+    logger.info ''
   end
 
   protected
