@@ -12,8 +12,9 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
 
     @options[:filter] ||= self.class.filter
     @logger = options[:logger] || self.class.logger || self.class.default_logger
-    @include_started_at = options.has_key?(:include_started_at) ? options[:include_started_at] : true
+    @include_started_at = get_boolean_option(options, :include_started_at, true)
     @statuses = options[:statuses] || {}
+    @backtrace = get_boolean_option(options, backtrace, false)
   end
 
   def before
@@ -83,14 +84,35 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
   end
 
   def after_exception(ex)
-    logger.info "  Error: #{ ex.message }"
+    if @backtrace
+      logger.error ''
+      logger.error "  Error: #{ ex.class } (#{ ex.message }):"
+
+      clean_backtrace(ex).each do |line|
+        logger.error("    #{ line }")
+      end
+
+      logger.error ''
+    else
+      logger.error "  Error: #{ ex.message }"
+    end
 
     ex_status = ex.respond_to?(:status) ? ex.status : nil
     after(@statuses[ex.class] || ex_status || 500)
   end
 
+  def clean_backtrace(ex)
+    if backtrace = ex.backtrace
+      if defined?(RAILS_ROOT)
+        backtrace.map { |line| line.sub(RAILS_ROOT, '') }
+      else
+        backtrace
+      end
+    end
+  end
+
   def after_failure(error)
-    logger.info "  Error: #{ error[:message] }" if error[:message]
+    logger.error "  Error: #{ error[:message] }" if error[:message]
 
     after(error[:status])
   end
@@ -125,6 +147,10 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
 
     result.concat endpoint.options[:path].map { |path| path.to_s.sub(BACKSLASH, '') }
     endpoint.options[:for].to_s << result.join(BACKSLASH)
+  end
+
+  def get_boolean_option(options, key, default)
+    options.has_key?(key) ? options[key] : default
   end
 
   class << self
