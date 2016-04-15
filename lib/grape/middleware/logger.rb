@@ -13,6 +13,7 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
     @options[:filter] ||= self.class.filter
     @logger = options[:logger] || self.class.logger || self.class.default_logger
     @include_started_at = options.has_key?(:include_started_at) ? options[:include_started_at] : true
+    @statuses = options[:statuses] || {}
   end
 
   def before
@@ -84,7 +85,8 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
   def after_exception(ex)
     logger.info "  Error: #{ ex.message }"
 
-    after(500)
+    ex_status = ex.respond_to?(:status) ? ex.status : nil
+    after(@statuses[ex.class] || ex_status || 500)
   end
 
   def after_failure(error)
