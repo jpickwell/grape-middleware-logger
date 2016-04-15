@@ -58,7 +58,7 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
   end
 
   def after(status)
-    logger.info "Completed #{ status } in #{ ((Time.now - start_time) * 1000).round(2) }ms\n"
+    logger.info "Completed #{ status } in #{ ((Time.now - start_time) * 1000).round(2) }ms"
   end
 
   protected
@@ -68,9 +68,10 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
   end
 
   def started_request_message(request)
-    %Q(\nStarted %s "%s" at %s) % [
+    'Started %s "%s" for %s at %s' % [
       request.request_method,
       request.path,
+      request.ip,
       start_time.to_default_s
     ]
   end
