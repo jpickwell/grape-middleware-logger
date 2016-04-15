@@ -14,7 +14,7 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
     @logger = options[:logger] || self.class.logger || self.class.default_logger
     @include_started_at = get_boolean_option(options, :include_started_at, true)
     @statuses = options[:statuses] || {}
-    @backtrace = get_boolean_option(options, backtrace, false)
+    @backtrace = get_boolean_option(options, :backtrace, false)
   end
 
   def before
