@@ -12,6 +12,7 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
 
     @options[:filter] ||= self.class.filter
     @logger = options[:logger] || self.class.logger || self.class.default_logger
+    @include_started_at = options.has_key?(:include_started_at) ? options[:include_started_at] : true
   end
 
   def before
@@ -20,7 +21,8 @@ class Grape::Middleware::Logger < Grape::Middleware::Globals
     super
 
     request = @env[Grape::Env::GRAPE_REQUEST]
-    logger.info { started_request_message(request) }
+    logger.info { started_request_message(request) } if @include_started_at
+
     logger.info "Processing by #{ processed_by }"
     logger.info "  Parameters: #{ parameters(request) }"
   end
